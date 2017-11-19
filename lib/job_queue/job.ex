@@ -1,8 +1,10 @@
 defmodule JobQueue.Job do
+  @moduledoc false
+
   @type t :: %{
           id: integer | nil,
           event: any | nil,
-          queue: term | nil,
+          queue: any | nil,
           retry_count: integer,
           from: pid | nil,
           reply: boolean

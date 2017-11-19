@@ -3,6 +3,8 @@ defmodule JobQueue.QueueTest do
 
   alias JobQueue.{Job, Queue, Processor}
 
+  doctest Queue
+
   defmodule Worker do
     def start_link(job = %Job{from: from, event: event}) do
       Task.start_link(fn ->

@@ -1,11 +1,49 @@
 defmodule JobQueue.Worker do
+  @moduledoc """
+  A behaviour and a module to handle some of the ceremony around a ConsumerSupervisor Worker.
+
+  ## Example
+      iex> # Setup Worker
+      ...> defmodule JobQueueWorker do
+      ...>   use JobQueue.Worker
+      ...>
+      ...>   def handle_event(event) do
+      ...>     {:ok, event}
+      ...>   end
+      ...> end
+      ...>
+      ...> # Start Queue
+      ...> {:ok, _queue} = JobQueue.Queue.start_link(WorkerQueue)
+      ...>
+      ...> # Setup Processor
+      ...> {:ok, _processor} = JobQueue.Processor.start_link(WorkerQueue, JobQueueWorker)
+      ...>
+      ...> # Queue a Job
+      ...> JobQueue.Queue.add_sync(WorkerQueue, :done)
+      {:ok, :done}
+
+  Compare this with the documentation of `JobQueue.Processor` to see the advantage to using `Worker`
+  """
   alias JobQueue.{Job, Queue}
 
+  @doc """
+  A callback to handle events coming off the queue.
+
+  ## Return Values
+    * `{:ok, message}` - This will `ack` the message back to the Queue and
+       reply with `message`
+    * `{:error, message}` - This will `nack` the message back to the Queue with
+      `message` as the error message.
+    * `{:retry, message}` - This will retry the job on the queue sending along
+      `message`.
+  """
   @callback handle_event(any) :: {:ok, any} | {:error, any} | {:retry, any}
 
   defmacro __using__(_) do
     quote location: :keep do
       use JobQueue.Logger
+
+      @behaviour JobQueue.Worker
 
       def start_link(job = %Job{event: event}) do
         log(:info, job, "Adding")
