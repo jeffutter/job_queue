@@ -7,7 +7,12 @@ defmodule JobQueue.Job do
           from: pid | nil,
           reply: boolean
         }
-  defstruct id: nil, event: nil, queue: nil, retry_count: 0, from: nil, reply: false
+  defstruct id: nil,
+            event: nil,
+            queue: nil,
+            retry_count: 0,
+            from: nil,
+            reply: false
 
   @spec new(any, term, pid, boolean) :: t
   def new(event, queue, from, reply \\ false) do

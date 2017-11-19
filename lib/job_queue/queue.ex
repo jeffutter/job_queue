@@ -5,7 +5,12 @@ defmodule JobQueue.Queue do
 
   alias JobQueue.Job
 
-  defstruct name: "", q: nil, in_progress: nil, pending_demand: 0, max_retries: 5, dedupe: false
+  defstruct name: "",
+            q: nil,
+            in_progress: nil,
+            pending_demand: 0,
+            max_retries: 5,
+            dedupe: false
 
   # Client
 
@@ -31,7 +36,7 @@ defmodule JobQueue.Queue do
         {:error, e}
 
       unknown ->
-        Logger.error("Unknown Message: #{inspect(unknown)}")
+        Logger.error fn -> "Unknown Message: #{inspect(unknown)}" end
         {:ok, :ok}
     after
       timeout -> {:error, "timeout"}
@@ -126,7 +131,9 @@ defmodule JobQueue.Queue do
   end
 
   def handle_cast({:ack, %Job{id: id}}, queue = %__MODULE__{in_progress: in_progress}) do
-    dispatch_jobs(%__MODULE__{queue | in_progress: Map.delete(in_progress, id)}, [])
+    queue
+    |> Map.put(:in_progress, Map.delete(in_progress, id))
+    |> dispatch_jobs()
   end
 
   def handle_cast({:ack, job = %Job{from: from, reply: send_reply}, reply}, queue = %__MODULE__{}) do
@@ -139,25 +146,29 @@ defmodule JobQueue.Queue do
 
   def handle_cast(
         {:nack, job = %Job{id: id, retry_count: retry_count}},
-        queue = %__MODULE__{name: name, q: q, in_progress: in_progress, max_retries: max_retries}
+        queue = %__MODULE__{
+          name: name,
+          q: q,
+          in_progress: in_progress,
+          max_retries: max_retries
+        }
       ) do
     if retry_count < max_retries do
-      dispatch_jobs(
-        %__MODULE__{
-          queue
-          | q: :queue.in(%Job{job | retry_count: retry_count + 1}, q),
-            in_progress: Map.delete(in_progress, id)
-        },
-        []
-      )
+      dispatch_jobs(%__MODULE__{
+        queue
+        | q: :queue.in(%Job{job | retry_count: retry_count + 1}, q),
+          in_progress: Map.delete(in_progress, id)
+      })
     else
-      Logger.error(
+      Logger.error fn ->
         "#{inspect(name)} Queue failed to re-queue job, retry(#{retry_count}/#{max_retries}): #{
           inspect(job)
         }"
-      )
+      end
 
-      dispatch_jobs(%__MODULE__{queue | in_progress: Map.delete(in_progress, id)}, [])
+      queue
+      |> Map.put(:in_progress, Map.delete(in_progress, id))
+      |> dispatch_jobs()
     end
   end
 
@@ -168,10 +179,11 @@ defmodule JobQueue.Queue do
     job = Job.new(event, name, from, reply)
 
     if dedupe && exists?(queue, job) do
-      dispatch_jobs(queue, [])
+      dispatch_jobs(queue)
     else
-      updated_queue = :queue.in(job, q)
-      dispatch_jobs(%__MODULE__{queue | q: updated_queue}, [])
+      queue
+      |> Map.put(:q, :queue.in(job, q))
+      |> dispatch_jobs()
     end
   end
 
@@ -180,7 +192,9 @@ defmodule JobQueue.Queue do
   end
 
   def handle_demand(incoming_demand, queue = %__MODULE__{pending_demand: pending_demand}) do
-    dispatch_jobs(%__MODULE__{queue | pending_demand: incoming_demand + pending_demand}, [])
+    queue
+    |> Map.put(:pending_demand, incoming_demand + pending_demand)
+    |> dispatch_jobs()
   end
 
   # Private Functions
@@ -192,7 +206,7 @@ defmodule JobQueue.Queue do
            pending_demand: pending_demand,
            in_progress: in_progress
          },
-         jobs
+         jobs \\ []
        ) do
     if pending_demand > 0 do
       case :queue.out(q) do
@@ -208,7 +222,7 @@ defmodule JobQueue.Queue do
           )
 
         {:empty, q} ->
-          Logger.debug("#{inspect(name)} Queue Empty")
+          Logger.debug fn -> "#{inspect(name)} Queue Empty" end
           {:noreply, Enum.reverse(jobs), %__MODULE__{queue | q: q}}
       end
     else
@@ -217,11 +231,11 @@ defmodule JobQueue.Queue do
   end
 
   defp exists?(%__MODULE__{q: q, in_progress: in_progress}, %Job{event: event}) do
-    compare = fn
+    c = fn
       %Job{event: ^event} -> true
       _ -> false
     end
 
-    Enum.any?(:queue.to_list(q), compare) || Enum.any?(Map.values(in_progress), compare)
+    Enum.any?(:queue.to_list(q), c) || Enum.any?(Map.values(in_progress), c)
   end
 end

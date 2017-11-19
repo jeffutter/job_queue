@@ -19,6 +19,7 @@ defmodule JobQueue.Mixfile do
 
   defp deps do
     [
+      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       gen_stage: "~> 0.12.1"
     ]
   end

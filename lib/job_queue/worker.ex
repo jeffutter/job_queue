@@ -1,7 +1,7 @@
 defmodule JobQueue.Worker do
   alias JobQueue.{Job, Queue}
 
-  @callback handle_event(event :: any) :: {:ok, any} | {:error, any} | {:retry, any}
+  @callback handle_event(any) :: {:ok, any} | {:error, any} | {:retry, any}
 
   defmacro __using__(_) do
     quote location: :keep do
@@ -43,12 +43,18 @@ defmodule JobQueue.Worker do
         if Logger.level() in [:debug, :info] do
           end_time = :erlang.monotonic_time()
 
+          duration =
+            :erlang.convert_time_unit(
+              end_time - start_time,
+              :native,
+              :millisecond
+            )
+
           log(
             :info,
             job,
             "Duration",
-            to_string(:erlang.convert_time_unit(end_time - start_time, :native, :millisecond)) <>
-              "ms"
+            to_string(duration) <> "ms"
           )
         end
       end
