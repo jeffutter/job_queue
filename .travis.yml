@@ -1,0 +1,29 @@
+language: elixir
+sudo: false
+elixir:
+- 1.5.2
+otp_release:
+- 19.3
+- 20.1
+env:
+  global:
+    - HEX_USERNAME=jeffutter
+cache:
+  directories:
+    - _build
+    - deps
+script:
+  - mix credo --strict
+  - mix dialyzer --halt-exit-status
+  - mix test
+deploy:
+   provider: script
+   script: >-
+     mix deps.get &&
+     mix hex.config username "$HEX_USERNAME" &&
+     (mix hex.config encrypted_key "$HEX_ENCRYPTED_KEY" > /dev/null 2>&1) &&
+     (echo "$HEX_PASSPHRASE"\\nY | mix hex.publish) &&
+     mix clean &&
+     mix deps.clean --all
+   on:
+    tags: true
