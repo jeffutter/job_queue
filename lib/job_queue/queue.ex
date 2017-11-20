@@ -58,7 +58,7 @@ defmodule JobQueue.Queue do
 
   @type t :: %{
           name: String.t(),
-          q: :queue.t() | nil,
+          q: :queue.queue(),
           in_progress: %{},
           pending_demand: integer,
           max_retries: integer,

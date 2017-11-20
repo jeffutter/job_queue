@@ -1,28 +1,29 @@
 defmodule JobQueue.Job do
   @moduledoc false
 
-  @type t :: %{
+  @type t :: %__MODULE__{
           id: integer | nil,
           event: any | nil,
-          queue: any | nil,
-          retry_count: integer,
           from: pid | nil,
-          reply: boolean
+          queue: any | nil,
+          reply: boolean,
+          retry_count: non_neg_integer
         }
+
   defstruct id: nil,
             event: nil,
-            queue: nil,
-            retry_count: 0,
             from: nil,
-            reply: false
+            queue: nil,
+            reply: false,
+            retry_count: 0
 
-  @spec new(any, term, pid, boolean) :: t
+  @spec new(any, any, pid, boolean) :: t
   def new(event, queue, from, reply \\ false) do
     %__MODULE__{
       id: :erlang.unique_integer(),
       event: event,
-      queue: queue,
       from: from,
+      queue: queue,
       reply: reply
     }
   end

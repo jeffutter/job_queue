@@ -22,6 +22,7 @@ defmodule JobQueue.Mixfile do
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:earmark, "~> 0.1", only: :dev},
       {:ex_doc, "~> 0.11", only: :dev},
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       gen_stage: "~> 0.12.1"
     ]
   end
