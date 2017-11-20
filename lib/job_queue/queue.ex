@@ -121,7 +121,6 @@ defmodule JobQueue.Queue do
   """
   @spec add_sync(any, any, integer) :: {:ok, any} | {:error, any}
   def add_sync(module, message, timeout \\ 5_000) do
-    # TODO: Make this actually cancel the task after timeout
     add(module, message, reply: true)
 
     receive do
