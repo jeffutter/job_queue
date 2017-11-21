@@ -30,6 +30,7 @@ defmodule JobQueue.Mixfile do
       {:earmark, "~> 0.1", only: :dev},
       {:ex_doc, "~> 0.11", only: :dev},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:inch_ex, only: :docs},
       gen_stage: "~> 0.12.1"
     ]
   end

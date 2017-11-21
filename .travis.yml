@@ -15,6 +15,7 @@ cache:
 script:
   - mix credo --strict
   - mix dialyzer --halt-exit-status
+  - MIX_ENV=docs mix inch.report
   - mix test
 deploy:
    provider: script
