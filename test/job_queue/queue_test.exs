@@ -40,8 +40,12 @@ defmodule JobQueue.QueueTest do
         false
       end
 
-    {:ok, _queue} = Queue.start_link(TestQueue, dedupe: dedupe)
-    {:ok, _processor} = Processor.start_link(TestQueue, Worker)
+    {:ok, _queue} =
+      start_supervised(%{id: Queue, start: {Queue, :start_link, [TestQueue, [dedupe: dedupe]]}})
+
+    {:ok, _processor} =
+      start_supervised(%{id: Processor, start: {Processor, :start_link, [TestQueue, Worker]}})
+
     :ok
   end
 
